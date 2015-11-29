@@ -19,11 +19,51 @@ public class PropositionalSyntax
 	
 	public static void main(String[] args)
 	{
-		HashMap<String, Boolean> myMap = new HashMap<String, Boolean>();
-		myMap.put("A", true);
-		myMap.put("B", false);
-		myMap.put("C", false);
-		System.out.println("Result: " + evalExpression("! & & A B C", myMap));
+		HashMap<String, Boolean> I1 = new HashMap<String, Boolean>();
+		
+		I1.put("p1", false);
+		I1.put("p2", true);
+		I1.put("p3", false);
+		I1.put("p4", true);
+		I1.put("p5", false);
+		I1.put("p6", true);
+		
+		calcPart3Expression(I1);
+		
+		HashMap<String, Boolean> I2 = new HashMap<String, Boolean>();
+		
+		I2.put("p1", true);
+		I2.put("p2", false);
+		I2.put("p3", true);
+		I2.put("p4", false);
+		I2.put("p5", true);
+		I2.put("p6", false);
+		
+		calcPart3Expression(I2);
+	}
+	
+	static void calcPart3Expression(HashMap<String, Boolean> myMap)
+	{
+		// calculate A
+		boolean resultA = evalExpression("& > p1 & p2 p3 > ! p1 & p3 p4", myMap);
+		System.out.println("Result A: " + resultA);
+		myMap.put("A", resultA);
+		// calculate B
+		boolean resultB = evalExpression("& > p3 ! p6 > ! p3 > p4 p1", myMap);
+		System.out.println("Result B: " + resultB);
+		myMap.put("B", resultB);
+		// calculate C
+		boolean resultC = evalExpression("& ! & p2 p5 > p2 p5", myMap);
+		System.out.println("Result C: " + resultC);
+		myMap.put("C", resultC);
+		// calculate D
+		boolean resultD = evalExpression("! > p3 p6", myMap);
+		System.out.println("Result D: " + resultD);
+		myMap.put("D", resultD);
+		
+		// calculate final formula E
+		boolean resultE = evalExpression("> & A & B C D", myMap);
+		System.out.println("Result Final E: " + resultE + "\n");
 	}
 	
 	static boolean evalExpression(String expression, HashMap<String, Boolean> values)
