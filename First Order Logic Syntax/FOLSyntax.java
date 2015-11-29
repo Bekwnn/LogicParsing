@@ -17,7 +17,7 @@ public class FOLSyntax
 	
 	public static void main(String[] args)
 	{
-		matchingMap("Loves(x,y)", "Loves(Dog(Fred), Fred)");
+		matchingMap("Loves(x,y)", "Loves(Dog(Fred),Fred)");
 	}
 	
 	// returns null if failure
