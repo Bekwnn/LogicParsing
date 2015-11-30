@@ -1,9 +1,11 @@
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.lang.StringBuilder;
 
 public class FOLSyntax
 {
@@ -22,7 +24,7 @@ public class FOLSyntax
 	
 	public static void main(String[] args)
 	{
-		HashMap<String,String> map = matchingMap("Loves(x,y)", "Loves(Dog(Fred),Fred)");
+		HashMap<String,String> map = matchingMap("Parents(x,father(x),mother(Bill))", "Parents(Bill,father(y),z)");
 		
 		System.out.println("Resulting map: ");
 		ArrayList<String> keys = new ArrayList<String>(map.keySet());
@@ -36,8 +38,8 @@ public class FOLSyntax
 	{
 		HashMap<String,String> map = new HashMap<String,String>();
 		
-		String[] tokenized1 = expression1.split(" ");
-		String[] tokenized2 = expression2.split(" ");
+		String[] tokenized1 = outerCommasToSpaces(expression1).split(" ");
+		String[] tokenized2 = outerCommasToSpaces(expression2).split(" ");
 		
 		// under our rules the tokenized arrays will be the same length
 		if (tokenized1.length != tokenized2.length) return null;
@@ -47,18 +49,16 @@ public class FOLSyntax
 			//if there's a mismatch
 			if (!tokenized1[i].equals(tokenized2[i]))
 			{
-				//if one of the mismatches is a variable, just 
-				if (getType(tokenized1[i]) == EPartType.VARIABLE)
+				//if one of the mismatches is a variable, map it
+				if (getType(tokenized1[i]) == EPartType.VARIABLE ||
+					getType(tokenized2[i]) == EPartType.VARIABLE)
 				{
 					//if (!mapsToSelf(tokenized1[i], tokenized2[i]))
-					map.put(tokenized1[i], tokenized2[i]);
-					System.out.println("Adding to map 1");
-				}
-				else if (getType(tokenized2[i]) == EPartType.VARIABLE)
-				{
-					//if (!mapsToSelf(tokenized2[i], tokenized1[i]))
-					map.put(tokenized1[i], tokenized2[i]);
-					System.out.println("Adding to map 2");
+					if (!isDuplicatePair(tokenized1[i], tokenized2[i], map))
+					{
+						insertPair(tokenized1[i], tokenized2[i], map);
+						System.out.println("Adding to map " + tokenized1[i] + ", " + tokenized2[i]);
+					}
 				}
 				//if both mismatching things are functions or predicates...
 				else if (getType(tokenized1[i]) == EPartType.FUNCORPRED &&
@@ -71,13 +71,12 @@ public class FOLSyntax
 					m2.find();
 					
 					System.out.println(tokenized1[i] + " / " + tokenized2[i]);
-					System.out.println(m1.group(1) + " / " + m1.group(2));
 					if (m1.group(1).equals(m2.group(1)))
 					{
 						//recurse on the contents inside
 						System.out.println(m1.group(2) + " / " + m2.group(2));
-						HashMap recurseResult = matchingMap(m1.group(2), m2.group(2));
-						if (recurseResult != null) map.putAll(recurseResult); //unsafe, compiler complaining
+						HashMap<String,String> recurseResult = matchingMap(m1.group(2), m2.group(2));
+						map = resolveUnion(map, recurseResult);
 					}
 					else return null;	//function handles don't match
 					
@@ -97,8 +96,52 @@ public class FOLSyntax
 		else                                        return EPartType.VARIABLE;
 	}
 	
-	static boolean mapsToSelf(String variable, String funcorpred)
+	static HashMap<String,String> resolveUnion(HashMap<String,String> mapA, HashMap<String,String> mapB)
+	{
+		HashMap<String,String> unionMap = new HashMap<String,String>(mapB);
+		
+		for (Map.Entry<String,String> entry : mapA.entrySet())
+		{
+			//resolve duplicates
+			if (isDuplicatePair(entry.getValue(), entry.getKey(), unionMap)) continue;
+			else insertPair(entry.getKey(), entry.getValue(), unionMap);
+		}
+		
+		return unionMap;
+	}
+	
+	static void insertPair(String a, String b, HashMap<String,String> map)
+	{
+		if (map.containsKey(a)) map.put(b, a);
+		else map.put(a, b);
+	}
+	
+	static boolean isDuplicatePair(String a, String b, HashMap<String,String> map)
+	{
+		if (map.containsValue(a) && map.containsKey(b)) return true;
+		else if (map.containsKey(a) && map.containsValue(b)) return true;
+		else return false;
+	}
+	
+	//TODO
+	static boolean mapsToSelf(String var, String funcOrPred)
 	{
 		return false;
+	}
+	
+	// converts commas that aren't inside parentheses
+	// because of recursive parsing reasons
+	static String outerCommasToSpaces(String a)
+	{
+		StringBuilder newString = new StringBuilder(a);
+		int openBracket = 0;
+		for (int i = 0; i < newString.length(); i++)
+		{
+			char c = newString.charAt(i);
+			if (c == '(') openBracket++;
+			else if (c == ')') openBracket--;
+			else if (c == ',' && openBracket == 0) newString.setCharAt(i,' ');
+		}
+		return newString.toString();
 	}
 }
