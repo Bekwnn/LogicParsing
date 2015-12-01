@@ -24,10 +24,23 @@ public class FOLSyntax
 	
 	public static void main(String[] args)
 	{
-		HashMap<String,String> map = matchingMap("Parents(Pet(Dog(Fred)),Fred)", "Parents(x,y)");
-		if (map == null) System.out.println("Mapping failed due to mismatch.");
-		else if (hasInfRecursion(map)) System.out.println("Mapping failed due to infinite recursion mapping.");
-		else printMap("Resulting map: ", map);
+		if (args.length != 1)
+		{
+			System.out.println("Usage: java PropositionalSyntax sample.txt");
+			return;
+		}
+		
+		ArrayList<FOLUtility.Problem> problems = FOLUtility.readProblemFile(args[0]);
+		int count = 0;
+		
+		for (FOLUtility.Problem prob : problems)
+		{
+			HashMap<String,String> map = matchingMap(prob.expression1, prob.expression2);
+			if (map == null) System.out.println("Result map " + (++count) " failed due to mismatch.");
+			else if (hasInfRecursion(map)) System.out.println("Mapping " + (++count) + " failed due to infinite recursion mapping.");
+			else printMap("Resulting map " + (++count) + ": ", map);
+			System.out.println();
+		}
 	}
 	
 	// returns null if failure
@@ -60,7 +73,7 @@ public class FOLSyntax
 					if (!isDuplicatePair(tokenized1[i], tokenized2[i], map))
 					{
 						insertPair(tokenized1[i], tokenized2[i], map);
-						System.out.println("Adding to map " + tokenized1[i] + ", " + tokenized2[i]);
+						System.out.println("Adding to map " + tokenized1[i] + " : " + tokenized2[i]);
 					}
 				}
 				//if both mismatching things are functions or predicates...

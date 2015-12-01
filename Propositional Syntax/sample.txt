@@ -1,0 +1,12 @@
+& A B
+A=t B=f
+& A B
+A=t B=t
+| & A C & A B
+A=t B=t C=f
+! | & A C & A B
+A=t B=t C=f
+= A B
+A=t B=t
+& = | ! > A B C D F
+A=t B=f C=t D=f F=t

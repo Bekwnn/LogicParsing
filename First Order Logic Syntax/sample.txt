@@ -1,0 +1,8 @@
+[Loves(x,y)][Loves(Fred,Dog(Fred))]
+[Loves(x,x)][Loves(Fred,Dog(Fred))]
+[found(shiney,part(stick)) & dead(bird) > murder][x & y > z]
+[found(shiney,part(stick)) | part(stick) > murder][found(x,y) | y > z]
+[found(shiney,part(stick)) | stick > murder][found(x,y) | y > z]
+[do(ra(me(fa(so(la))))) & la][x & x]
+[func(stuff)][stuff(func)]
+[func(stuff) | stuff][x & y]
