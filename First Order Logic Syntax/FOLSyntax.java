@@ -24,13 +24,10 @@ public class FOLSyntax
 	
 	public static void main(String[] args)
 	{
-		HashMap<String,String> map = matchingMap("Parents(x,father(x),mother(Bill))", "Parents(Bill,father(y),z)");
-		
-		System.out.println("Resulting map: ");
-		ArrayList<String> keys = new ArrayList<String>(map.keySet());
-		for (String key: keys) {
-			System.out.println(key + ": " + map.get(key));
-		}
+		HashMap<String,String> map = matchingMap("Parents(Pet(Dog(Fred)),Fred)", "Parents(x,y)");
+		if (map == null) System.out.println("Mapping failed due to mismatch.");
+		else if (hasInfRecursion(map)) System.out.println("Mapping failed due to infinite recursion mapping.");
+		else printMap("Resulting map: ", map);
 	}
 	
 	// returns null if failure
@@ -49,11 +46,17 @@ public class FOLSyntax
 			//if there's a mismatch
 			if (!tokenized1[i].equals(tokenized2[i]))
 			{
+				// if one of the mistmatches is an operation, fail
+				if (getType(tokenized1[i]) == EPartType.CONNECTIVE ||
+					getType(tokenized1[i]) == EPartType.QUANTIFIER ||
+					getType(tokenized2[i]) == EPartType.CONNECTIVE ||
+					getType(tokenized2[i]) == EPartType.QUANTIFIER)
+					{return null;}
+				
 				//if one of the mismatches is a variable, map it
-				if (getType(tokenized1[i]) == EPartType.VARIABLE ||
+				else if (getType(tokenized1[i]) == EPartType.VARIABLE ||
 					getType(tokenized2[i]) == EPartType.VARIABLE)
 				{
-					//if (!mapsToSelf(tokenized1[i], tokenized2[i]))
 					if (!isDuplicatePair(tokenized1[i], tokenized2[i], map))
 					{
 						insertPair(tokenized1[i], tokenized2[i], map);
@@ -123,9 +126,52 @@ public class FOLSyntax
 		else return false;
 	}
 	
-	//TODO
-	static boolean mapsToSelf(String var, String funcOrPred)
+	//returns true if a map has some mapping x : func(x)
+	static boolean hasInfRecursion(HashMap<String,String> map)
 	{
+		// splits on parenthesis and commas
+		// ex func(stuff1,stuff2) => [func, stuff1, stuff2]
+		for (Map.Entry<String,String> entry : map.entrySet())
+		{
+			if (getType(entry.getKey()) == EPartType.FUNCORPRED)
+			{
+				if (isRecursion(entry.getValue(), entry.getKey(), map)) return true;
+			}
+			else if (getType(entry.getValue()) == EPartType.FUNCORPRED)
+			{
+				if (isRecursion(entry.getKey(), entry.getValue(), map)) return true;
+			}
+		}
+		return false;
+	}
+	
+	// recursive call to check if mapping is recursive
+	static boolean isRecursion(String var, String func, HashMap<String,String> map)
+	{
+		System.out.println("Checking recursion on var:"+var+" and func:"+func);
+		// for each term check if mapping from var to term exists
+		// ex. func(term1,term2(term3)) => does var map to term1, term2(term3), or term3?
+		Matcher m = captureFuncOrPred.matcher(func);
+		m.find();
+		String[] terms = outerCommasToSpaces(m.group(2)).split(" ");
+		
+		for (String term : terms)
+		{
+			// if the term is a func or pred, recursive call
+			// to check for things like x: a(b(c)), x: c
+			if (getType(term) == EPartType.FUNCORPRED)
+			{
+				if (isRecursion(var, term, map)) return true;
+			}
+			
+			// check for mapping from var to term or vice versa
+			for (Map.Entry<String,String> entry : map.entrySet())
+			{
+				if (term.equals(entry.getKey()) && var.equals(entry.getValue())) return true;
+				else if (term.equals(entry.getValue()) && var.equals(entry.getKey())) return true;
+			}
+		}
+		
 		return false;
 	}
 	
@@ -143,5 +189,14 @@ public class FOLSyntax
 			else if (c == ',' && openBracket == 0) newString.setCharAt(i,' ');
 		}
 		return newString.toString();
+	}
+	
+	static void printMap(String introLine, HashMap<String,String> map)
+	{
+		System.out.println(introLine);
+		ArrayList<String> keys = new ArrayList<String>(map.keySet());
+		for (String key: keys) {
+			System.out.println(key + ": " + map.get(key));
+		}
 	}
 }
